@@ -48,10 +48,10 @@ private final class ShieldPanel {
         effectView = NSVisualEffectView(frame: rootView.bounds)
         effectView.autoresizingMask = [.width, .height]
         effectView.blendingMode = .behindWindow
-        effectView.material = .underWindowBackground
+        effectView.material = .popover
         effectView.state = .active
         effectView.wantsLayer = true
-        effectView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.035).cgColor
+        effectView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.1).cgColor
         effectView.layer?.mask = gradient
         rootView.addSubview(effectView)
 
@@ -62,6 +62,12 @@ private final class ShieldPanel {
         hint.state = .active
         hint.wantsLayer = true
         hint.layer?.cornerRadius = 15
+        hint.layer?.borderWidth = 1
+        hint.layer?.borderColor = NSColor.white.withAlphaComponent(0.23).cgColor
+        hint.layer?.shadowColor = NSColor.black.cgColor
+        hint.layer?.shadowOpacity = 0.1
+        hint.layer?.shadowRadius = 15
+        hint.layer?.shadowOffset = CGSize(width: 0, height: -4)
 
         let label = NSTextField(labelWithString: "GazeVeil  •  Click anywhere to clear")
         label.translatesAutoresizingMaskIntoConstraints = false

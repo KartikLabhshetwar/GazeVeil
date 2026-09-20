@@ -37,24 +37,10 @@ struct GazeVeilApp: App {
             Button("Quit GazeVeil") { NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q")
         } label: {
-            MenuBarIcon()
+            Image(systemName: model.statusSymbol)
+                .accessibilityLabel("GazeVeil")
         }
-    }
-}
-
-private struct MenuBarIcon: View {
-    private static let image = Bundle.main.url(forResource: "GazeVeil", withExtension: "icns")
-        .flatMap(NSImage.init(contentsOf:))
-        ?? NSApp.applicationIconImage
-        ?? NSImage(size: NSSize(width: 18, height: 18))
-
-    var body: some View {
-        Image(nsImage: Self.image)
-            .resizable()
-            .interpolation(.high)
-            .renderingMode(.original)
-            .frame(width: 18, height: 18)
-            .accessibilityLabel("GazeVeil")
+        .menuBarExtraStyle(.menu)
     }
 }
 
