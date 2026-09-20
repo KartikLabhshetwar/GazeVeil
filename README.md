@@ -1,49 +1,87 @@
 # GazeVeil
 
-AirPods-aware screen privacy for macOS. Look away in any direction and GazeVeil places a native glass blur over every display; face the screen again to clear it.
+AirPods-aware screen privacy for macOS. Look away from your display and GazeVeil covers it with a native glass blur; face the display again to clear it.
 
-## Run
+<p align="center">
+  <a href="https://github.com/KartikLabhshetwar/GazeVeil/releases/download/v0.1.0/GazeVeil-0.1.0-macOS-arm64.zip">⬇️ Download for Apple Silicon</a>
+  &nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="https://github.com/KartikLabhshetwar/GazeVeil/releases/download/v0.1.0/GazeVeil-0.1.0-macOS-x86_64.zip">⬇️ Download for Intel Mac</a>
+</p>
 
-Requirements: macOS 14+, Xcode command-line tools, and head-tracking AirPods for the motion path.
+GazeVeil is signed with a Developer ID certificate and notarized by Apple. It requires macOS 14 or later.
 
-```bash
-./build.sh --run
-```
+## Install
 
-The app opens a guided setup window on first launch. Connect and wear AirPods 3/4, AirPods Pro, or AirPods Max, then choose **Center & Start** while facing the display. Use **Recenter** whenever your seating position changes.
+1. Download the correct ZIP for your Mac.
+2. Open the ZIP and drag **GazeVeil.app** into **Applications**.
+3. Open GazeVeil and follow the onboarding instructions.
+4. Wear compatible AirPods, select them as the Mac's audio output, then choose **Center & Start** while facing the display.
 
-The motion sensor is inside supported AirPods, not the MacBook. AirPods 1 and 2 cannot provide head-motion data. The Mac connects to the earbuds over Bluetooth and Core Motion exposes their orientation through `CMHeadphoneMotionManager`.
+Choose **Apple Silicon** for Macs with an M-series chip. Choose **Intel Mac** for older Intel-based Macs.
 
-If motion is denied, enable **GazeVeil** in **System Settings → Privacy & Security → Motion & Fitness**. The AirPods must be worn, connected, and selected as the Mac's audio output.
+## Requirements
 
-For live glass blur, open **System Settings → Accessibility → Display**, turn off **Reduce transparency**, and keep it off while using GazeVeil. macOS intentionally replaces translucent materials with opaque surfaces while that accessibility option is enabled. The same three-step instruction and current setting status appear during onboarding.
+- macOS 14 or later
+- AirPods 3 or 4, AirPods Pro, or AirPods Max
+- **Reduce transparency** turned off under **System Settings → Accessibility → Display**
 
-The eye icon remains in the menu bar for quick start/stop, recentering, blur preview, and reopening the controls.
+If motion access is denied, enable GazeVeil under **System Settings → Privacy & Security → Motion & Fitness**.
+
+## Using GazeVeil
+
+The eye icon in the menu bar provides controls to start or stop protection, recenter head tracking, test the privacy shield, and reopen settings. Use **Recenter** whenever your seating position changes.
+
+The shield clears when you face the display, click anywhere on it, or after an eight-second failsafe. This keeps the app dismissible even if motion sensing stalls.
+
+## Privacy
+
+GazeVeil reads processed orientation data from the motion sensors inside compatible AirPods. It does not:
+
+- use the camera;
+- capture or record the screen;
+- save motion history; or
+- connect to a server.
+
+All behavior runs locally on the Mac.
 
 ## How it works
 
-- Quaternion-relative motion detects left, right, up, and down without Euler-angle wraparound errors.
-- A short debounce and hysteresis prevent sensor jitter from flashing the overlay.
-- The overlay uses public AppKit glass APIs: `NSGlassEffectView` on macOS 26 and `NSVisualEffectView` on macOS 14–15. GazeVeil does not use the camera, take screenshots, save motion history, or connect to a server.
-- The shield clears when you face the screen, click it, or after an eight-second failsafe.
-- The menu bar item uses the standard native macOS menu.
+- Quaternion-relative motion detects left, right, up, and down without angle wraparound errors.
+- Debounce and hysteresis prevent sensor jitter from flashing the shield.
+- macOS 26 uses public `NSGlassEffectView` APIs over a full-screen system material.
+- macOS 14 and 15 use the native `NSVisualEffectView` fallback.
+- Multiple displays are protected independently.
 
-## Development
+## Build from source
+
+Requirements: Xcode command-line tools and Swift 6.2 or later.
 
 ```bash
-swift test
-swift build -c release
+make test
+make local
+make run
 ```
 
-Versions follow Semantic Versioning. The initial release is `0.1.0` with bundle build number `1`; the next patch release is built with:
+The project is native Swift and has no third-party runtime dependencies.
+
+## Release process
+
+Versions follow Semantic Versioning. The current release is `0.1.0`, bundle build `1`.
+
+```bash
+make credentials APPLE_ID=you@example.com  # first release only
+make release-all
+```
+
+For the next patch release:
 
 ```bash
 make set-version VERSION=0.1.1 BUILD_NUMBER=2
-make release
+make release-all
 ```
 
-The project has no third-party dependencies or bundled assets. Liquid Glass is used on macOS 26, with a native material fallback on macOS 14 and later.
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 
-GazeVeil is licensed under the GNU Affero General Public License v3.0. See `LICENSE`.
+GazeVeil is licensed under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE).
