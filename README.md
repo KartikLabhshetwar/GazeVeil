@@ -35,6 +35,13 @@ swift test
 swift build -c release
 ```
 
+Versions follow Semantic Versioning. The initial release is `0.1.0` with bundle build number `1`; the next patch release is built with:
+
+```bash
+make set-version VERSION=0.1.1 BUILD_NUMBER=2
+make release
+```
+
 The project has no third-party dependencies or bundled assets. Liquid Glass is used on macOS 26, with a native material fallback on macOS 14 and later.
 
 ## License
