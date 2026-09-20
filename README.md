@@ -16,13 +16,15 @@ The motion sensor is inside supported AirPods, not the MacBook. AirPods 1 and 2 
 
 If motion is denied, enable **GazeVeil** in **System Settings → Privacy & Security → Motion & Fitness**. The AirPods must be worn, connected, and selected as the Mac's audio output.
 
+For live glass blur, open **System Settings → Accessibility → Display**, turn off **Reduce transparency**, and keep it off while using GazeVeil. macOS intentionally replaces translucent materials with opaque surfaces while that accessibility option is enabled. The same three-step instruction and current setting status appear during onboarding.
+
 The eye icon remains in the menu bar for quick start/stop, recentering, blur preview, and reopening the controls.
 
 ## How it works
 
 - Quaternion-relative motion detects left, right, up, and down without Euler-angle wraparound errors.
 - A short debounce and hysteresis prevent sensor jitter from flashing the overlay.
-- The overlay uses macOS `NSVisualEffectView`. GazeVeil does not use the camera, take screenshots, save motion history, or connect to a server.
+- The overlay uses public AppKit glass APIs: `NSGlassEffectView` on macOS 26 and `NSVisualEffectView` on macOS 14–15. GazeVeil does not use the camera, take screenshots, save motion history, or connect to a server.
 - The shield clears when you face the screen, click it, or after an eight-second failsafe.
 - The menu bar item uses the standard native macOS menu.
 

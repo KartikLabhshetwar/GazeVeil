@@ -27,6 +27,7 @@ private struct OnboardingView: View {
     @Bindable var model: AppModel
     let finish: () -> Void
     @State private var page = 0
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -57,13 +58,30 @@ private struct OnboardingView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            VStack(alignment: .leading, spacing: 16) {
-                Label("Works left, right, up, and down", systemImage: "arrow.up.left.and.arrow.down.right")
-                Label("No camera, screenshots, or network", systemImage: "hand.raised.fill")
-                Label("Click the shield or return to center to clear it", systemImage: "escape")
+            VStack(alignment: .leading, spacing: 13) {
+                Text("Enable the live glass effect")
+                    .font(.headline)
+
+                Label("Open System Settings", systemImage: "1.circle.fill")
+                Label("Select Accessibility", systemImage: "2.circle.fill")
+                Label("Open Display and turn off Reduce transparency", systemImage: "3.circle.fill")
+
+                Divider()
+
+                Label(
+                    reduceTransparency
+                        ? "Reduce Transparency is on — turn it off before continuing."
+                        : "Ready — Reduce Transparency is off.",
+                    systemImage: reduceTransparency ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
+                )
+                .foregroundStyle(reduceTransparency ? Color.orange : Color.green)
+
+                Text("Keep this setting off while using GazeVeil. macOS otherwise replaces live glass with an opaque surface.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .font(.headline)
-            .padding(24)
+            .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
             .gazeGlass(tint: .accentColor.opacity(0.1))
             .accessibilityElement(children: .contain)
@@ -163,6 +181,7 @@ private struct OnboardingView: View {
 private struct SettingsView: View {
     @Bindable var model: AppModel
     let runSetupAgain: () -> Void
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         VStack(spacing: 18) {
@@ -187,6 +206,15 @@ private struct SettingsView: View {
             .padding(24)
             .gazeGlass(tint: model.isEnabled ? .accentColor.opacity(0.1) : nil)
             .accessibilityElement(children: .contain)
+
+            if reduceTransparency {
+                Label(
+                    "Turn off Reduce Transparency in System Settings → Accessibility → Display to see the live glass blur.",
+                    systemImage: "circle.lefthalf.filled"
+                )
+                .foregroundStyle(.orange)
+                .fixedSize(horizontal: false, vertical: true)
+            }
 
             Form {
                 Section("Live status") {

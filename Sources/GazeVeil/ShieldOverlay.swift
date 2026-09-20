@@ -30,7 +30,7 @@ final class ShieldOverlay {
 @MainActor
 private final class ShieldPanel {
     private let window: NSPanel
-    private let effectView: NSVisualEffectView
+    private let effectView: NSView
     private let gradient = CAGradientLayer()
 
     init(screen: NSScreen, onDismiss: @escaping () -> Void) {
@@ -45,14 +45,25 @@ private final class ShieldPanel {
         let rootView = ClickToClearView(frame: NSRect(origin: .zero, size: screen.frame.size))
         rootView.onDismiss = onDismiss
 
-        effectView = NSVisualEffectView(frame: rootView.bounds)
+        effectView = NSView(frame: rootView.bounds)
         effectView.autoresizingMask = [.width, .height]
-        effectView.blendingMode = .behindWindow
-        effectView.material = .popover
-        effectView.state = .active
         effectView.wantsLayer = true
-        effectView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.1).cgColor
         effectView.layer?.mask = gradient
+
+        let strongBlur = NSVisualEffectView(frame: effectView.bounds)
+        strongBlur.autoresizingMask = [.width, .height]
+        strongBlur.blendingMode = .behindWindow
+        strongBlur.material = .fullScreenUI
+        strongBlur.state = .active
+        effectView.addSubview(strongBlur)
+
+        if #available(macOS 26, *) {
+            let glass = NSGlassEffectView(frame: effectView.bounds)
+            glass.autoresizingMask = [.width, .height]
+            glass.style = .regular
+            glass.tintColor = NSColor.white.withAlphaComponent(0.16)
+            effectView.addSubview(glass)
+        }
         rootView.addSubview(effectView)
 
         let hint = NSVisualEffectView()
