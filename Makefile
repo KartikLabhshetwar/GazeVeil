@@ -13,12 +13,16 @@ UPLOAD_ARCHIVE := $(DIST_DIR)/$(NAME)-notarization.zip
 FINAL_ARCHIVE := $(DIST_DIR)/$(NAME).zip
 NOTARY_RESULT := $(DIST_DIR)/$(NAME)-notary-result.json
 NOTARY_LOG := $(DIST_DIR)/$(NAME)-notary-log.json
+DMG := $(DIST_DIR)/$(NAME).dmg
+DMG_STAGING := $(DIST_DIR)/$(NAME)-dmg
+DMG_NOTARY_RESULT := $(DIST_DIR)/$(NAME)-dmg-notary-result.json
+DMG_NOTARY_LOG := $(DIST_DIR)/$(NAME)-dmg-notary-log.json
 
 TEAM_ID ?= 8JL39GK2DC
 SIGNING_IDENTITY ?= Developer ID Application: Kartik Labhshetwar ($(TEAM_ID))
 NOTARY_PROFILE ?= GazeVeilNotary
 
-.PHONY: help version set-version check-version test local run credentials check-credentials release release-all check-certificate sign notarize verify clean-dist
+.PHONY: help version set-version check-version test local run credentials check-credentials release release-all check-certificate sign notarize verify dmg clean-dist
 
 help:
 	@echo 'Local:'
@@ -35,7 +39,7 @@ help:
 	@echo '  make release                      Release $(VERSION) ($(BUILD_NUMBER))'
 	@echo '  make release-all                  Release Apple Silicon and Intel builds'
 	@echo '  make release VERSION=0.1.1 BUILD_NUMBER=2'
-	@echo '  Output: build/dist/$(NAME).zip'
+	@echo '  Output: build/dist/$(NAME).dmg and .zip'
 	@echo ''
 	@echo 'This does not upload anything to GitHub.'
 
@@ -128,11 +132,44 @@ verify:
 	cd "$(DIST_DIR)" && shasum -a 256 "$(notdir $(FINAL_ARCHIVE))" > "$(notdir $(FINAL_ARCHIVE)).sha256"
 	@echo 'Ready to publish: $(FINAL_ARCHIVE)'
 
+dmg: check-credentials check-certificate
+	rm -rf "$(DMG_STAGING)"
+	rm -f "$(DMG)" "$(DMG).sha256" "$(DMG_NOTARY_RESULT)" "$(DMG_NOTARY_LOG)"
+	mkdir -p "$(DMG_STAGING)"
+	ditto "$(APP)" "$(DMG_STAGING)/GazeVeil.app"
+	ln -s /Applications "$(DMG_STAGING)/Applications"
+	hdiutil create -volname "GazeVeil $(VERSION)" -srcfolder "$(DMG_STAGING)" \
+		-ov -format UDZO "$(DMG)"
+	codesign --force --timestamp --sign "$(SIGNING_IDENTITY)" "$(DMG)"
+	codesign --verify --verbose=2 "$(DMG)"
+	xcrun notarytool submit "$(DMG)" \
+		--keychain-profile "$(NOTARY_PROFILE)" \
+		--wait --output-format json | tee "$(DMG_NOTARY_RESULT)"
+	@[[ -s "$(DMG_NOTARY_RESULT)" ]] || { \
+		echo 'Notary service returned no DMG result'; \
+		exit 1; \
+	}
+	@submission_id=$$(plutil -extract id raw -o - "$(DMG_NOTARY_RESULT)"); \
+	dmg_notary_status=$$(plutil -extract status raw -o - "$(DMG_NOTARY_RESULT)"); \
+	xcrun notarytool log "$$submission_id" "$(DMG_NOTARY_LOG)" \
+		--keychain-profile "$(NOTARY_PROFILE)"; \
+	if [[ "$$dmg_notary_status" != 'Accepted' ]]; then \
+		echo "DMG notarization failed: $$dmg_notary_status (see $(DMG_NOTARY_LOG))"; \
+		exit 1; \
+	fi
+	xcrun stapler staple "$(DMG)"
+	xcrun stapler validate "$(DMG)"
+	spctl --assess --type open --context context:primary-signature --verbose=4 "$(DMG)"
+	cd "$(DIST_DIR)" && shasum -a 256 "$(notdir $(DMG))" > "$(notdir $(DMG)).sha256"
+	rm -rf "$(DMG_STAGING)"
+	@echo 'Ready to install: $(DMG)'
+
 release:
 	@$(MAKE) test
 	@$(MAKE) sign
 	@$(MAKE) notarize
 	@$(MAKE) verify
+	@$(MAKE) dmg
 
 release-all:
 	@$(MAKE) release ARCH=arm64
@@ -140,4 +177,6 @@ release-all:
 
 clean-dist:
 	rm -f "$(UPLOAD_ARCHIVE)" "$(FINAL_ARCHIVE)" "$(FINAL_ARCHIVE).sha256" \
-		"$(NOTARY_RESULT)" "$(NOTARY_LOG)"
+		"$(NOTARY_RESULT)" "$(NOTARY_LOG)" "$(DMG)" "$(DMG).sha256" \
+		"$(DMG_NOTARY_RESULT)" "$(DMG_NOTARY_LOG)"
+	rm -rf "$(DMG_STAGING)"

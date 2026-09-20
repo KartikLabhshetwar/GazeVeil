@@ -2,6 +2,13 @@
 
 All notable changes to GazeVeil are documented here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-09-20
+
+### Changed
+
+- Downloads now use signed and notarized DMGs with an Applications shortcut for the standard drag-to-install experience.
+- The release pipeline now creates DMG and ZIP builds for both Apple Silicon and Intel Macs.
+
 ## [0.1.0] - 2026-09-20
 
 ### Added
@@ -19,3 +26,4 @@ All notable changes to GazeVeil are documented here. Versions follow [Semantic V
 - No camera access, screen capture, saved motion history, analytics, or network service.
 
 [0.1.0]: https://github.com/KartikLabhshetwar/GazeVeil/releases/tag/v0.1.0
+[0.1.1]: https://github.com/KartikLabhshetwar/GazeVeil/releases/tag/v0.1.1

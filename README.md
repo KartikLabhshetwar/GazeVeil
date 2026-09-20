@@ -3,19 +3,20 @@
 AirPods-aware screen privacy for macOS. Look away from your display and GazeVeil covers it with a native glass blur; face the display again to clear it.
 
 <p align="center">
-  <a href="https://github.com/KartikLabhshetwar/GazeVeil/releases/download/v0.1.0/GazeVeil-0.1.0-macOS-arm64.zip">⬇️ Download for Apple Silicon</a>
+  <a href="https://github.com/KartikLabhshetwar/GazeVeil/releases/download/v0.1.1/GazeVeil-0.1.1-macOS-arm64.dmg">⬇️ Download for Apple Silicon</a>
   &nbsp;&nbsp;•&nbsp;&nbsp;
-  <a href="https://github.com/KartikLabhshetwar/GazeVeil/releases/download/v0.1.0/GazeVeil-0.1.0-macOS-x86_64.zip">⬇️ Download for Intel Mac</a>
+  <a href="https://github.com/KartikLabhshetwar/GazeVeil/releases/download/v0.1.1/GazeVeil-0.1.1-macOS-x86_64.dmg">⬇️ Download for Intel Mac</a>
 </p>
 
 GazeVeil is signed with a Developer ID certificate and notarized by Apple. It requires macOS 14 or later.
 
 ## Install
 
-1. Download the correct ZIP for your Mac.
-2. Open the ZIP and drag **GazeVeil.app** into **Applications**.
-3. Open GazeVeil and follow the onboarding instructions.
-4. Wear compatible AirPods, select them as the Mac's audio output, then choose **Center & Start** while facing the display.
+1. Download and open the correct DMG for your Mac.
+2. Drag **GazeVeil.app** onto the **Applications** shortcut in the installer window.
+3. Eject the GazeVeil disk image.
+4. Open GazeVeil from Applications and follow the onboarding instructions.
+5. Wear compatible AirPods, select them as the Mac's audio output, then choose **Center & Start** while facing the display.
 
 Choose **Apple Silicon** for Macs with an M-series chip. Choose **Intel Mac** for older Intel-based Macs.
 
@@ -66,7 +67,7 @@ The project is native Swift and has no third-party runtime dependencies.
 
 ## Release process
 
-Versions follow Semantic Versioning. The current release is `0.1.0`, bundle build `1`.
+Versions follow Semantic Versioning. The current release is `0.1.1`, bundle build `2`.
 
 ```bash
 make credentials APPLE_ID=you@example.com  # first release only
@@ -76,7 +77,7 @@ make release-all
 For the next patch release:
 
 ```bash
-make set-version VERSION=0.1.1 BUILD_NUMBER=2
+make set-version VERSION=0.1.2 BUILD_NUMBER=3
 make release-all
 ```
 
