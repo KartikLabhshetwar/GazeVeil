@@ -235,6 +235,27 @@ private struct SettingsView: View {
                         .help("Additional movement in any direction required for full coverage")
                 }
 
+                Section("Recenter shortcut") {
+                    Picker("Key", selection: $model.recenterShortcutKey) {
+                        ForEach(RecenterShortcutKey.allCases) { key in
+                            Text(key.title).tag(key)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    Toggle("Command", isOn: $model.recenterShortcutUsesCommand)
+                    Toggle("Option", isOn: $model.recenterShortcutUsesOption)
+                    Toggle("Control", isOn: $model.recenterShortcutUsesControl)
+                    Toggle("Shift", isOn: $model.recenterShortcutUsesShift)
+
+                    Text("Use this shortcut anywhere in macOS. At least one modifier is required.")
+                        .foregroundStyle(.secondary)
+                    if let error = model.recenterShortcutError {
+                        Label(error, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                }
+
                 Section("Privacy") {
                     Text("GazeVeil reads processed orientation from Core Motion and renders a system material locally. It does not use the camera, capture the screen, save motion history, or connect to a server.")
                         .foregroundStyle(.secondary)
@@ -247,7 +268,6 @@ private struct SettingsView: View {
             HStack {
                 Button("Recenter") { model.recenter() }
                     .disabled(!model.canCalibrate)
-                    .keyboardShortcut("r", modifiers: [.command, .shift])
                 Button("Test Privacy Shield") { model.testShield() }
                     .disabled(model.shieldEngaged)
                 if model.shieldEngaged {

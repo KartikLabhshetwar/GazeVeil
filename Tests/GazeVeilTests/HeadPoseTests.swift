@@ -1,8 +1,15 @@
+import Carbon.HIToolbox
 import Testing
 @testable import GazeVeil
 
 @Suite("Head pose math")
 struct HeadPoseTests {
+    @Test("Recenter shortcut maps letters to virtual key codes")
+    func recenterShortcutKeyCode() {
+        #expect(RecenterShortcutKey.r.keyCode == UInt32(kVK_ANSI_R))
+        #expect(RecenterShortcutKey.z.keyCode == UInt32(kVK_ANSI_Z))
+    }
+
     @Test("Identity is centered")
     func identityIsCentered() throws {
         var calculator = HeadPoseCalculator()
