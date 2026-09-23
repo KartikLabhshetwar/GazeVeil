@@ -1,6 +1,46 @@
 import AppKit
+import Carbon.HIToolbox
 import CoreMotion
 import Observation
+
+enum RecenterShortcutKey: String, CaseIterable, Identifiable {
+    case a, b, c, d, e, f, g, h, i, j, k, l, m
+    case n, o, p, q, r, s, t, u, v, w, x, y, z
+
+    var id: String { rawValue }
+    var title: String { rawValue.uppercased() }
+
+    var keyCode: UInt32 {
+        switch self {
+        case .a: UInt32(kVK_ANSI_A)
+        case .b: UInt32(kVK_ANSI_B)
+        case .c: UInt32(kVK_ANSI_C)
+        case .d: UInt32(kVK_ANSI_D)
+        case .e: UInt32(kVK_ANSI_E)
+        case .f: UInt32(kVK_ANSI_F)
+        case .g: UInt32(kVK_ANSI_G)
+        case .h: UInt32(kVK_ANSI_H)
+        case .i: UInt32(kVK_ANSI_I)
+        case .j: UInt32(kVK_ANSI_J)
+        case .k: UInt32(kVK_ANSI_K)
+        case .l: UInt32(kVK_ANSI_L)
+        case .m: UInt32(kVK_ANSI_M)
+        case .n: UInt32(kVK_ANSI_N)
+        case .o: UInt32(kVK_ANSI_O)
+        case .p: UInt32(kVK_ANSI_P)
+        case .q: UInt32(kVK_ANSI_Q)
+        case .r: UInt32(kVK_ANSI_R)
+        case .s: UInt32(kVK_ANSI_S)
+        case .t: UInt32(kVK_ANSI_T)
+        case .u: UInt32(kVK_ANSI_U)
+        case .v: UInt32(kVK_ANSI_V)
+        case .w: UInt32(kVK_ANSI_W)
+        case .x: UInt32(kVK_ANSI_X)
+        case .y: UInt32(kVK_ANSI_Y)
+        case .z: UInt32(kVK_ANSI_Z)
+        }
+    }
+}
 
 @MainActor
 @Observable
@@ -18,6 +58,21 @@ final class AppModel {
     var fullCoverDistanceDegrees: Double {
         didSet { UserDefaults.standard.set(fullCoverDistanceDegrees, forKey: "fullCoverDistanceDegrees") }
     }
+    var recenterShortcutKey: RecenterShortcutKey {
+        didSet { updateRecenterHotKey() }
+    }
+    var recenterShortcutUsesCommand: Bool {
+        didSet { updateRecenterHotKey() }
+    }
+    var recenterShortcutUsesOption: Bool {
+        didSet { updateRecenterHotKey() }
+    }
+    var recenterShortcutUsesControl: Bool {
+        didSet { updateRecenterHotKey() }
+    }
+    var recenterShortcutUsesShift: Bool {
+        didSet { updateRecenterHotKey() }
+    }
 
     private(set) var displayedPose = HeadPose(angleDegrees: 0, yawDegrees: 0, pitchDegrees: 0)
     private(set) var connectionText = "Protection is off"
@@ -25,6 +80,7 @@ final class AppModel {
     private(set) var errorText: String?
     private(set) var canCalibrate = false
     private(set) var isCentered = false
+    private(set) var recenterShortcutError: String?
 
     @ObservationIgnored
     private let tracker = HeadphoneMotionTracker()
@@ -54,9 +110,18 @@ final class AppModel {
     private var dismissTask: Task<Void, Never>?
     @ObservationIgnored
     private var isSettingUp = false
+    @ObservationIgnored
+    private var recenterHotKey: RecenterHotKey?
 
     init() {
         let defaults = UserDefaults.standard
+        recenterShortcutKey = RecenterShortcutKey(
+            rawValue: defaults.string(forKey: "recenterShortcutKey") ?? ""
+        ) ?? .r
+        recenterShortcutUsesCommand = defaults.object(forKey: "recenterShortcutUsesCommand") as? Bool ?? true
+        recenterShortcutUsesOption = defaults.object(forKey: "recenterShortcutUsesOption") as? Bool ?? true
+        recenterShortcutUsesControl = defaults.object(forKey: "recenterShortcutUsesControl") as? Bool ?? true
+        recenterShortcutUsesShift = defaults.object(forKey: "recenterShortcutUsesShift") as? Bool ?? true
         comfortDegrees = min(35, max(5, defaults.object(forKey: "comfortDegrees") as? Double ?? 15))
         fullCoverDistanceDegrees = min(30, max(5, defaults.object(forKey: "fullCoverDistanceDegrees") as? Double ?? 15))
 
@@ -64,6 +129,8 @@ final class AppModel {
         tracker.onOrientation = { [weak self] orientation in self?.receive(orientation) }
         tracker.onDisconnect = { [weak self] in self?.disconnected() }
         overlay.onDismiss = { [weak self] in self?.dismissShield(requireCenter: true) }
+        recenterHotKey = RecenterHotKey { [weak self] in self?.recenter() }
+        updateRecenterHotKey()
 
         if defaults.bool(forKey: "isEnabled") { isEnabled = true }
     }
@@ -263,6 +330,38 @@ final class AppModel {
         trigger.reset()
     }
 
+    private func updateRecenterHotKey() {
+        guard recenterShortcutModifiers != 0 else {
+            recenterShortcutUsesCommand = true
+            return
+        }
+
+        guard recenterHotKey?.register(
+            keyCode: recenterShortcutKey.keyCode,
+            modifiers: recenterShortcutModifiers
+        ) ?? true else {
+            recenterShortcutError = "Shortcut is already in use."
+            return
+        }
+
+        let defaults = UserDefaults.standard
+        defaults.set(recenterShortcutKey.rawValue, forKey: "recenterShortcutKey")
+        defaults.set(recenterShortcutUsesCommand, forKey: "recenterShortcutUsesCommand")
+        defaults.set(recenterShortcutUsesOption, forKey: "recenterShortcutUsesOption")
+        defaults.set(recenterShortcutUsesControl, forKey: "recenterShortcutUsesControl")
+        defaults.set(recenterShortcutUsesShift, forKey: "recenterShortcutUsesShift")
+        recenterShortcutError = nil
+    }
+
+    private var recenterShortcutModifiers: UInt32 {
+        var modifiers: UInt32 = 0
+        if recenterShortcutUsesCommand { modifiers |= UInt32(cmdKey) }
+        if recenterShortcutUsesOption { modifiers |= UInt32(optionKey) }
+        if recenterShortcutUsesControl { modifiers |= UInt32(controlKey) }
+        if recenterShortcutUsesShift { modifiers |= UInt32(shiftKey) }
+        return modifiers
+    }
+
     private func disconnected() {
         calculator = HeadPoseCalculator()
         latestOrientation = nil
@@ -353,5 +452,56 @@ final class HeadphoneMotionTracker: NSObject, CMHeadphoneMotionManagerDelegate {
         guard status != lastStatus else { return }
         lastStatus = status
         onStatus?(status)
+    }
+}
+
+@MainActor
+private final class RecenterHotKey {
+    private var hotKey: EventHotKeyRef?
+    private var handler: EventHandlerRef?
+    private let action: () -> Void
+
+    init(action: @escaping () -> Void) {
+        self.action = action
+
+        var eventType = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed)
+        )
+        let handlerStatus = InstallEventHandler(
+            GetApplicationEventTarget(),
+            Self.handle,
+            1,
+            &eventType,
+            Unmanaged.passUnretained(self).toOpaque(),
+            &handler
+        )
+        guard handlerStatus == noErr else { return }
+    }
+
+    func register(keyCode: UInt32, modifiers: UInt32) -> Bool {
+        var newHotKey: EventHotKeyRef?
+        let identifier = EventHotKeyID(signature: OSType(0x47565A4C), id: 1)
+        guard RegisterEventHotKey(
+            keyCode,
+            modifiers,
+            identifier,
+            GetApplicationEventTarget(),
+            0,
+            &newHotKey
+        ) == noErr, let newHotKey else {
+            return false
+        }
+
+        if let hotKey { UnregisterEventHotKey(hotKey) }
+        hotKey = newHotKey
+        return true
+    }
+
+    private static let handle: EventHandlerUPP = { _, _, userData in
+        guard let userData else { return noErr }
+        let hotKey = Unmanaged<RecenterHotKey>.fromOpaque(userData).takeUnretainedValue()
+        MainActor.assumeIsolated { hotKey.action() }
+        return noErr
     }
 }
