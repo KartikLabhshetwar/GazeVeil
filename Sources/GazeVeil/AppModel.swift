@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import CoreMotion
 import Observation
 
@@ -54,6 +55,8 @@ final class AppModel {
     private var dismissTask: Task<Void, Never>?
     @ObservationIgnored
     private var isSettingUp = false
+    @ObservationIgnored
+    private var recenterHotKey: RecenterHotKey?
 
     init() {
         let defaults = UserDefaults.standard
@@ -64,6 +67,7 @@ final class AppModel {
         tracker.onOrientation = { [weak self] orientation in self?.receive(orientation) }
         tracker.onDisconnect = { [weak self] in self?.disconnected() }
         overlay.onDismiss = { [weak self] in self?.dismissShield(requireCenter: true) }
+        recenterHotKey = RecenterHotKey { [weak self] in self?.recenter() }
 
         if defaults.bool(forKey: "isEnabled") { isEnabled = true }
     }
@@ -353,5 +357,47 @@ final class HeadphoneMotionTracker: NSObject, CMHeadphoneMotionManagerDelegate {
         guard status != lastStatus else { return }
         lastStatus = status
         onStatus?(status)
+    }
+}
+
+@MainActor
+private final class RecenterHotKey {
+    private var hotKey: EventHotKeyRef?
+    private var handler: EventHandlerRef?
+    private let action: () -> Void
+
+    init(action: @escaping () -> Void) {
+        self.action = action
+
+        var eventType = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed)
+        )
+        let handlerStatus = InstallEventHandler(
+            GetApplicationEventTarget(),
+            Self.handle,
+            1,
+            &eventType,
+            Unmanaged.passUnretained(self).toOpaque(),
+            &handler
+        )
+        guard handlerStatus == noErr else { return }
+
+        let identifier = EventHotKeyID(signature: OSType(0x47565A4C), id: 1)
+        RegisterEventHotKey(
+            UInt32(kVK_ANSI_R),
+            UInt32(cmdKey | optionKey | controlKey | shiftKey),
+            identifier,
+            GetApplicationEventTarget(),
+            0,
+            &hotKey
+        )
+    }
+
+    private static let handle: EventHandlerUPP = { _, _, userData in
+        guard let userData else { return noErr }
+        let hotKey = Unmanaged<RecenterHotKey>.fromOpaque(userData).takeUnretainedValue()
+        MainActor.assumeIsolated { hotKey.action() }
+        return noErr
     }
 }
