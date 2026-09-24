@@ -235,6 +235,12 @@ private struct SettingsView: View {
                         .help("Additional movement in any direction required for full coverage")
                 }
 
+                Section("Displays") {
+                    Toggle("Cover external displays", isOn: $model.coverExternalDisplays)
+                    Text("Turn this off to cover only this Mac’s built-in display.")
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Privacy") {
                     Text("GazeVeil reads processed orientation from Core Motion and renders a system material locally. It does not use the camera, capture the screen, save motion history, or connect to a server.")
                         .foregroundStyle(.secondary)

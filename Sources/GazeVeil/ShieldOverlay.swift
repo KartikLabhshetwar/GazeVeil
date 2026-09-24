@@ -7,9 +7,9 @@ final class ShieldOverlay {
 
     var isVisible: Bool { !panels.isEmpty }
 
-    func show(progress: Double, pose: HeadPose) {
+    func show(progress: Double, pose: HeadPose, coverExternalDisplays: Bool = true) {
         if panels.isEmpty {
-            panels = NSScreen.screens.map { screen in
+            panels = screens(coverExternalDisplays: coverExternalDisplays).map { screen in
                 ShieldPanel(screen: screen) { [weak self] in self?.onDismiss?() }
             }
             panels.forEach { $0.show() }
@@ -24,6 +24,23 @@ final class ShieldOverlay {
     func hide() {
         panels.forEach { $0.close() }
         panels.removeAll()
+    }
+
+    private func screens(coverExternalDisplays: Bool) -> [NSScreen] {
+        guard !coverExternalDisplays else { return NSScreen.screens }
+
+        let builtInScreens = NSScreen.screens.filter(\.isBuiltIn)
+        if !builtInScreens.isEmpty { return builtInScreens }
+        return NSScreen.main.map { [$0] } ?? Array(NSScreen.screens.prefix(1))
+    }
+}
+
+private extension NSScreen {
+    var isBuiltIn: Bool {
+        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+            return false
+        }
+        return CGDisplayIsBuiltin(CGDirectDisplayID(screenNumber.uint32Value)) != 0
     }
 }
 

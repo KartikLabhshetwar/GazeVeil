@@ -18,6 +18,9 @@ final class AppModel {
     var fullCoverDistanceDegrees: Double {
         didSet { UserDefaults.standard.set(fullCoverDistanceDegrees, forKey: "fullCoverDistanceDegrees") }
     }
+    var coverExternalDisplays: Bool {
+        didSet { UserDefaults.standard.set(coverExternalDisplays, forKey: "coverExternalDisplays") }
+    }
 
     private(set) var displayedPose = HeadPose(angleDegrees: 0, yawDegrees: 0, pitchDegrees: 0)
     private(set) var connectionText = "Protection is off"
@@ -57,6 +60,7 @@ final class AppModel {
 
     init() {
         let defaults = UserDefaults.standard
+        coverExternalDisplays = defaults.object(forKey: "coverExternalDisplays") as? Bool ?? true
         comfortDegrees = min(35, max(5, defaults.object(forKey: "comfortDegrees") as? Double ?? 15))
         fullCoverDistanceDegrees = min(30, max(5, defaults.object(forKey: "fullCoverDistanceDegrees") as? Double ?? 15))
 
@@ -132,7 +136,8 @@ final class AppModel {
         shieldEngaged = true
         overlay.show(
             progress: 1,
-            pose: HeadPose(angleDegrees: 45, yawDegrees: 24, pitchDegrees: 0)
+            pose: HeadPose(angleDegrees: 45, yawDegrees: 24, pitchDegrees: 0),
+            coverExternalDisplays: coverExternalDisplays
         )
         dismissTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(3))
@@ -234,7 +239,11 @@ final class AppModel {
 
     private func engageShield(progress: Double, pose: HeadPose) {
         shieldEngaged = true
-        overlay.show(progress: progress, pose: pose)
+        overlay.show(
+            progress: progress,
+            pose: pose,
+            coverExternalDisplays: coverExternalDisplays
+        )
         lastOverlayUpdateTime = lastSampleTime
         dismissTask?.cancel()
         dismissTask = Task { [weak self] in
